@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Synthetic supplier and contractor settlement register prototype">
+  <title>Settlement Register</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <section id="login-view" class="login-view">
+      <div class="login-card">
+        <div class="brand-mark">SR</div>
+        <p class="eyebrow">Automated settlement processing</p>
+        <h1>Settlement Register</h1>
+        <p class="muted">A paper-sized prototype for supplier and contractor settlements.</p>
+        <div class="demo-note">
+          <strong>Synthetic demo mode</strong>
+          <span>All records are invented test data and remain in this browser.</span>
+        </div>
+        <button class="button button-primary button-wide" data-action="login">Enter demo as operator</button>
+        <p class="login-footnote">Firebase Authentication can replace this local demo entry for deployment.</p>
+      </div>
+    </section>
+
+    <section id="workspace-view" class="workspace-view hidden">
+      <header class="topbar">
+        <div class="topbar-brand">
+          <div class="brand-mark brand-mark-small">SR</div>
+          <div>
+            <strong>Settlement Register</strong>
+            <span>Supplier and contractor settlements</span>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <span class="data-badge">Synthetic data</span>
+          <span class="operator-label">Operator</span>
+          <button class="icon-button" data-action="reset-data" title="Reset synthetic data">Reset</button>
+          <button class="button button-ghost" data-action="logout">Exit</button>
+        </div>
+      </header>
+
+      <div class="workspace-layout">
+        <aside class="sidebar" aria-label="Primary navigation">
+          <nav class="nav-list">
+            <button class="nav-item active" data-view="overview"><span class="nav-number">01</span>Overview</button>
+            <button class="nav-item" data-view="counterparties"><span class="nav-number">02</span>Counterparties</button>
+            <button class="nav-item" data-view="contracts"><span class="nav-number">03</span>Contracts</button>
+            <button class="nav-item" data-view="obligations"><span class="nav-number">04</span>Obligations</button>
+            <button class="nav-item" data-view="payments"><span class="nav-number">05</span>Payments</button>
+            <button class="nav-item" data-view="report"><span class="nav-number">06</span>Settlement report</button>
+          </nav>
+          <div class="sidebar-note">
+            <span class="status-dot"></span>
+            <div>
+              <strong>Demo environment</strong>
+              <span>Local browser storage</span>
+            </div>
+          </div>
+        </aside>
+
+        <main id="main-content" class="main-content" tabindex="-1"></main>
+      </div>
+    </section>
+  </div>
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    match /counterparties/{id} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.resource.data.keys().hasOnly([
+          'name', 'counterpartyType', 'registrationNumber', 'contact',
+          'active', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 80
+        && request.resource.data.counterpartyType in ['supplier', 'contractor']
+        && request.resource.data.active is bool;
+      allow delete: if false;
+    }
+
+    match /contracts/{id} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.resource.data.keys().hasOnly([
+          'counterpartyId', 'number', 'contractDate', 'paymentTermsDays',
+          'currency', 'description', 'active', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.counterpartyId is string
+        && exists(/databases/$(database)/documents/counterparties/$(request.resource.data.counterpartyId))
+        && request.resource.data.number is string
+        && request.resource.data.number.size() > 0
+        && request.resource.data.contractDate is string
+        && request.resource.data.paymentTermsDays is int
+        && request.resource.data.paymentTermsDays >= 0
+        && request.resource.data.currency == 'RUB'
+        && request.resource.data.active is bool;
+      allow delete: if false;
+    }
+
+    match /obligations/{id} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.resource.data.keys().hasOnly([
+          'counterpartyId', 'contractId', 'documentType', 'documentNumber',
+          'documentDate', 'amountMinor', 'recognizedOn', 'dueDate',
+          'active', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.counterpartyId is string
+        && request.resource.data.contractId is string
+        && exists(/databases/$(database)/documents/counterparties/$(request.resource.data.counterpartyId))
+        && exists(/databases/$(database)/documents/contracts/$(request.resource.data.contractId))
+        && request.resource.data.documentType in [
+          'invoice', 'deliveryNote', 'completedWorkAct', 'adjustment'
+        ]
+        && request.resource.data.documentNumber is string
+        && request.resource.data.documentNumber.size() > 0
+        && request.resource.data.documentDate is string
+        && request.resource.data.recognizedOn is string
+        && request.resource.data.dueDate is string
+        && request.resource.data.amountMinor is int
+        && request.resource.data.amountMinor > 0
+        && request.resource.data.active is bool;
+      allow delete: if false;
+    }
+
+    match /payments/{id} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.resource.data.keys().hasOnly([
+          'obligationId', 'paymentDate', 'amountMinor', 'currency',
+          'method', 'reference', 'active', 'createdAt'
+        ])
+        && request.resource.data.obligationId is string
+        && exists(/databases/$(database)/documents/obligations/$(request.resource.data.obligationId))
+        && request.resource.data.paymentDate is string
+        && request.resource.data.amountMinor is int
+        && request.resource.data.amountMinor > 0
+        && request.resource.data.currency == 'RUB'
+        && request.resource.data.method in ['bankTransfer', 'cash', 'other']
+        && request.resource.data.active is bool;
+      allow delete: if false;
+    }
+  }
+}

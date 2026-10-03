@@ -1,0 +1,33 @@
+# Dependencies and generated output
+node_modules/
+dist/
+build/
+coverage/
+
+# Local Firebase state and project binding
+.firebase/
+.firebaserc
+firebase-debug.log
+*-debug.log
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+firebase-config.js
+firebase-config.local.js
+service-account*.json
+*-service-account*.json
+google-services.json
+*.pem
+*.key
+
+# Local editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local test artifacts
+playwright-report/
+test-results/
