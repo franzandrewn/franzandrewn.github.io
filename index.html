@@ -1,10 +1,14 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Synthetic supplier and contractor settlement register prototype">
   <title>Settlement Register</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=PT+Serif:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -26,6 +30,7 @@
           <button class="button button-primary button-wide" type="submit">Sign in with Firebase</button>
         </form>
         <button class="button button-primary button-wide hidden" data-action="login">Enter local demo</button>
+        <div class="locale-switcher" aria-label="Language"><button class="locale-button" type="button" data-locale="ru">RU</button><button class="locale-button" type="button" data-locale="en">EN</button></div>
         <p class="login-footnote">Use only the synthetic operator account. Passwords are never stored by this application.</p>
       </div>
     </section>
@@ -42,6 +47,7 @@
         <div class="topbar-actions">
           <span class="data-badge" id="data-environment-label">Preparing</span>
           <span class="operator-label" id="operator-label">Operator</span>
+          <div class="locale-switcher" aria-label="Language"><button class="locale-button" type="button" data-locale="ru">RU</button><button class="locale-button" type="button" data-locale="en">EN</button></div>
           <button class="icon-button" id="reset-data-button" data-action="reset-data" title="Reset local synthetic data">Reset</button>
           <button class="button button-ghost" data-action="logout">Exit</button>
         </div>
@@ -71,6 +77,8 @@
     </section>
   </div>
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ru.js"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

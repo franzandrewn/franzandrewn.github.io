@@ -7,7 +7,7 @@
     "check": "node --check app.js",
     "seed:firestore": "node seed-firestore.mjs",
     "seed:firestore:dry-run": "node seed-firestore.mjs --dry-run",
-    "test": "node --test calculations.test.mjs"
+    "test": "node --test calculations.test.mjs localization.test.mjs"
   },
   "keywords": [],
   "author": "",

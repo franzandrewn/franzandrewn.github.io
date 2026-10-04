@@ -51,8 +51,21 @@ jobs:
 
       - name: Assemble static Pages artifact
         run: |
-          mkdir dist
-          cp index.html app.js calculations.mjs firebase-client.mjs styles.css firebase-config.js dist/
+          mkdir -p dist/ru dist/en
+          for locale in ru en; do
+            cp index.html app.js calculations.mjs firebase-client.mjs localization.mjs styles.css firebase-config.js "dist/$locale/"
+          done
+          cat > dist/index.html <<'HTML'
+          <!doctype html>
+          <html lang="ru">
+          <head>
+            <meta charset="utf-8">
+            <meta http-equiv="refresh" content="0; url=./ru/">
+            <script>window.location.replace("./ru/");</script>
+          </head>
+          <body><a href="./ru/">Перейти к русской версии</a></body>
+          </html>
+          HTML
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
