@@ -71,7 +71,7 @@ service cloud.firestore {
       allow create, update: if signedIn()
         && request.resource.data.keys().hasOnly([
           'obligationId', 'paymentDate', 'amountMinor', 'currency',
-          'method', 'reference', 'active', 'createdAt'
+          'method', 'reference', 'active', 'createdAt', 'updatedAt'
         ])
         && request.resource.data.obligationId is string
         && exists(/databases/$(database)/documents/obligations/$(request.resource.data.obligationId))

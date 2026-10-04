@@ -1,0 +1,18 @@
+{
+  "name": "prototype",
+  "version": "1.0.0",
+  "description": "A compact browser application for recording and reviewing settlements with suppliers and contractors.",
+  "main": "app.js",
+  "scripts": {
+    "check": "node --check app.js",
+    "seed:firestore": "node seed-firestore.mjs",
+    "seed:firestore:dry-run": "node seed-firestore.mjs --dry-run",
+    "test": "node --test calculations.test.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "firebase-admin": "14.5.0"
+  }
+}

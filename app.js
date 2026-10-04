@@ -1,6 +1,6 @@
 import { calculateMetrics, calculateSummary, filterSettlements, validatePaymentAmount } from "./calculations.mjs";
+import { createDataService } from "./firebase-client.mjs";
 
-const STORAGE_KEY = "settlement-register-demo-v1";
 const TODAY = "2026-10-03";
 
 const seedData = {
@@ -21,9 +21,19 @@ const seedData = {
   ]
 };
 
+function emptyData() {
+  return { counterparties: [], contracts: [], obligations: [], payments: [] };
+}
+
+const dataServicePromise = createDataService(seedData);
+let dataService;
 const state = {
   view: "overview",
-  data: loadData(),
+  data: emptyData(),
+  mode: "initializing",
+  user: null,
+  loading: true,
+  firestoreError: "",
   reportAsOf: TODAY,
   filters: { type: "all", status: "all", search: "" }
 };
@@ -31,35 +41,14 @@ const state = {
 const app = document.querySelector("#app");
 const loginView = document.querySelector("#login-view");
 const workspaceView = document.querySelector("#workspace-view");
+const loginForm = document.querySelector('[data-form="login"]');
+const loginError = document.querySelector("#login-error");
+const loginModeNote = document.querySelector("#login-mode-note");
 const mainContent = document.querySelector("#main-content");
 const toastRegion = document.querySelector("#toast-region");
 
-function loadData() {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) return structuredClone(seedData);
-  try {
-    const parsed = JSON.parse(stored);
-    return {
-      counterparties: Array.isArray(parsed.counterparties) ? parsed.counterparties : [],
-      contracts: Array.isArray(parsed.contracts) ? parsed.contracts : [],
-      obligations: Array.isArray(parsed.obligations) ? parsed.obligations : [],
-      payments: Array.isArray(parsed.payments) ? parsed.payments : []
-    };
-  } catch {
-    return structuredClone(seedData);
-  }
-}
-
-function saveData() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
-}
-
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character]));
-}
-
-function uid(prefix) {
-  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
 function money(amountMinor) {
@@ -128,14 +117,48 @@ function summaryCards(data) {
   </div>`;
 }
 
+function environmentLabel() {
+  return state.mode === "cloud" ? "Firebase-backed register" : "Local demo fallback";
+}
+
 function pageHeading(title, description, action = "") {
-  return `<div class="page-heading"><div><p class="eyebrow">Synthetic test data</p><h1>${title}</h1><p>${description}</p></div>${action}</div>`;
+  return `<div class="page-heading"><div><p class="eyebrow">${environmentLabel()}</p><h1>${title}</h1><p>${description}</p></div>${action}</div>`;
 }
 
 function render() {
+  updateWorkspaceChrome();
   document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.view === state.view));
-  mainContent.innerHTML = viewMarkup();
+  if (state.loading) mainContent.innerHTML = loadingState();
+  else if (state.firestoreError) mainContent.innerHTML = firestoreErrorState();
+  else mainContent.innerHTML = viewMarkup();
   mainContent.focus({ preventScroll: true });
+}
+
+function updateLoginMode() {
+  const demoButton = document.querySelector('[data-action="login"]');
+  const cloudMode = state.mode === "cloud";
+  loginModeNote.innerHTML = cloudMode
+    ? "<strong>Firebase operator sign-in</strong><span>Use the synthetic account provisioned for this isolated project.</span>"
+    : "<strong>Local demo fallback</strong><span>Firebase configuration is not present; records stay in this browser only.</span>";
+  loginForm.classList.toggle("hidden", !cloudMode);
+  demoButton.classList.toggle("hidden", cloudMode);
+}
+
+function updateWorkspaceChrome() {
+  const cloudMode = state.mode === "cloud";
+  document.querySelector("#data-environment-label").textContent = cloudMode ? "Firebase / Firestore" : "Local fallback";
+  document.querySelector("#operator-label").textContent = state.user?.email || "Operator";
+  document.querySelector("#sidebar-environment-label").textContent = cloudMode ? "Cloud environment" : "Demo environment";
+  document.querySelector("#sidebar-storage-label").textContent = cloudMode ? "Firestore persistence" : "Local browser storage";
+  document.querySelector("#reset-data-button").classList.toggle("hidden", cloudMode);
+}
+
+function loadingState() {
+  return "<section class=\"panel loading-state\"><strong>Loading settlement data</strong><span>Reading the current register from the selected data source.</span></section>";
+}
+
+function firestoreErrorState() {
+  return `<section class="panel error-state"><strong>Settlement data could not be loaded</strong><span>${escapeHtml(state.firestoreError)}</span><button class="button button-primary" data-action="retry-load">Retry</button></section>`;
 }
 
 function viewMarkup() {
@@ -271,19 +294,26 @@ function validateDateOrder(first, second, message) {
   if (first && second && first > second) throw new Error(message);
 }
 
-function handleForm(form) {
+async function handleForm(form) {
   const values = formData(form);
   try {
-    if (form.dataset.form === "counterparty") addCounterparty(values);
-    if (form.dataset.form === "contract") addContract(values);
-    if (form.dataset.form === "obligation") addObligation(values);
-    if (form.dataset.form === "payment") addPayment(values);
-    saveData();
+    if (form.dataset.form === "login") {
+      await signIn(values.email, values.password);
+      return;
+    }
+    let records;
+    if (form.dataset.form === "counterparty") records = ["counterparties", addCounterparty(values)];
+    if (form.dataset.form === "contract") records = ["contracts", addContract(values)];
+    if (form.dataset.form === "obligation") records = ["obligations", addObligation(values)];
+    if (form.dataset.form === "payment") records = ["payments", addPayment(values)];
+    if (!records || !dataService) throw new Error("The data service is not ready.");
+    await dataService.create(records[0], records[1]);
+    await refreshData();
     form.reset();
-    showToast("Saved to the synthetic demo register.");
+    showToast(state.mode === "cloud" ? "Saved to Firestore." : "Saved to the local demo fallback.");
     render();
   } catch (error) {
-    const message = form.querySelector("[data-form-message]");
+    const message = form.querySelector("[data-form-message]") || loginError;
     if (message) message.textContent = error.message;
     showToast(error.message, true);
   }
@@ -291,13 +321,13 @@ function handleForm(form) {
 
 function addCounterparty(values) {
   if (!values.name.trim() || !values.counterpartyType) throw new Error("Name and type are required.");
-  state.data.counterparties.push({ id: uid("cp"), name: values.name.trim(), counterpartyType: values.counterpartyType, registrationNumber: values.registrationNumber.trim(), contact: values.contact.trim(), active: true, createdAt: new Date().toISOString() });
+  return { name: values.name.trim(), counterpartyType: values.counterpartyType, registrationNumber: values.registrationNumber.trim(), contact: values.contact.trim(), active: true };
 }
 
 function addContract(values) {
   if (!values.counterpartyId || !values.number.trim() || !values.contractDate) throw new Error("Counterparty, number and date are required.");
   if (!counterparty(values.counterpartyId)) throw new Error("Select a valid counterparty.");
-  state.data.contracts.push({ id: uid("contract"), counterpartyId: values.counterpartyId, number: values.number.trim(), contractDate: values.contractDate, paymentTermsDays: Math.max(Number(values.paymentTermsDays) || 0, 0), currency: "RUB", description: values.description.trim(), active: true });
+  return { counterpartyId: values.counterpartyId, number: values.number.trim(), contractDate: values.contractDate, paymentTermsDays: Math.max(Number(values.paymentTermsDays) || 0, 0), currency: "RUB", description: values.description.trim(), active: true };
 }
 
 function addObligation(values) {
@@ -307,7 +337,7 @@ function addObligation(values) {
   const amountMinor = amountToMinor(values.amount);
   if (amountMinor <= 0) throw new Error("The obligation amount must be greater than zero.");
   validateDateOrder(values.recognizedOn, values.dueDate, "Due date cannot precede recognition date.");
-  state.data.obligations.push({ id: uid("obligation"), counterpartyId: values.counterpartyId, contractId: values.contractId, documentType: values.documentType, documentNumber: values.documentNumber.trim(), documentDate: values.documentDate, amountMinor, recognizedOn: values.recognizedOn, dueDate: values.dueDate, active: true, createdAt: new Date().toISOString() });
+  return { counterpartyId: values.counterpartyId, contractId: values.contractId, documentType: values.documentType, documentNumber: values.documentNumber.trim(), documentDate: values.documentDate, amountMinor, recognizedOn: values.recognizedOn, dueDate: values.dueDate, active: true };
 }
 
 function addPayment(values) {
@@ -320,7 +350,58 @@ function addPayment(values) {
     if (amountMinor <= 0) throw new Error("The payment amount must be greater than zero.");
     throw new Error(`Payment cannot exceed the remaining balance of ${money(validation.remainingMinor)}.`);
   }
-  state.data.payments.push({ id: uid("payment"), obligationId: values.obligationId, paymentDate: values.paymentDate, amountMinor, currency: "RUB", method: values.method, reference: values.reference.trim(), active: true, createdAt: new Date().toISOString() });
+  return { obligationId: values.obligationId, paymentDate: values.paymentDate, amountMinor, currency: "RUB", method: values.method, reference: values.reference.trim(), active: true };
+}
+
+async function refreshData() {
+  if (!dataService) throw new Error("The data service is not ready.");
+  state.data = await dataService.loadData();
+  state.firestoreError = "";
+}
+
+async function enterWorkspace() {
+  state.loading = true;
+  state.firestoreError = "";
+  loginView.classList.add("hidden");
+  workspaceView.classList.remove("hidden");
+  render();
+  try {
+    await refreshData();
+  } catch (error) {
+    state.firestoreError = error.message;
+  } finally {
+    state.loading = false;
+    render();
+  }
+}
+
+async function signIn(email, password) {
+  loginError.textContent = "";
+  try {
+    if (!dataService) throw new Error("Firebase initialization is still in progress.");
+    state.user = await dataService.signIn(email, password);
+    await enterWorkspace();
+  } catch (error) {
+    state.user = null;
+    loginError.textContent = error.message;
+    showToast(error.message, true);
+  }
+}
+
+async function boot() {
+  try {
+    dataService = await dataServicePromise;
+    state.mode = dataService.mode;
+    state.user = dataService.user;
+    state.loading = false;
+    updateLoginMode();
+    if (state.user) await enterWorkspace();
+  } catch (error) {
+    state.mode = "cloud";
+    state.loading = false;
+    updateLoginMode();
+    loginError.textContent = `Firebase initialization failed: ${error.message}`;
+  }
 }
 
 function showToast(message, error = false) {
@@ -344,21 +425,23 @@ app.addEventListener("click", (event) => {
   }
   const action = event.target.closest("[data-action]")?.dataset.action;
   if (action === "login") {
-    sessionStorage.setItem("settlement-demo-session", "operator");
-    loginView.classList.add("hidden");
-    workspaceView.classList.remove("hidden");
-    render();
+    void signIn();
   }
   if (action === "logout") {
-    sessionStorage.removeItem("settlement-demo-session");
+    void dataService?.signOut();
+    state.user = null;
     workspaceView.classList.add("hidden");
     loginView.classList.remove("hidden");
+    updateLoginMode();
   }
-  if (action === "reset-data") {
-    state.data = structuredClone(seedData);
-    saveData();
-    showToast("Synthetic data reset.");
-    render();
+  if (action === "reset-data" && state.mode === "local") {
+    void dataService.reset().then(refreshData).then(() => {
+      showToast("Synthetic data reset.");
+      render();
+    }).catch((error) => showToast(error.message, true));
+  }
+  if (action === "retry-load") {
+    void enterWorkspace();
   }
   if (action === "clear-filters") {
     state.filters = { type: "all", status: "all", search: "" };
@@ -396,8 +479,4 @@ app.addEventListener("input", (event) => {
   }
 });
 
-if (sessionStorage.getItem("settlement-demo-session") === "operator") {
-  loginView.classList.add("hidden");
-  workspaceView.classList.remove("hidden");
-  render();
-}
+void boot();

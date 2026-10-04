@@ -1,0 +1,80 @@
+{
+  "counterparties": [
+    {
+      "id": "cp-volga",
+      "name": "Volga Office Supply",
+      "counterpartyType": "supplier",
+      "registrationNumber": "TEST-S-001",
+      "contact": "demo@supplier.test",
+      "active": true
+    },
+    {
+      "id": "cp-northline",
+      "name": "Northline Repairs",
+      "counterpartyType": "contractor",
+      "registrationNumber": "TEST-C-001",
+      "contact": "demo@contractor.test",
+      "active": true
+    }
+  ],
+  "contracts": [
+    {
+      "id": "contract-office",
+      "counterpartyId": "cp-volga",
+      "number": "SUP-2026-014",
+      "contractDate": "2026-08-28",
+      "paymentTermsDays": 14,
+      "currency": "RUB",
+      "description": "Office supplies",
+      "active": true
+    },
+    {
+      "id": "contract-repair",
+      "counterpartyId": "cp-northline",
+      "number": "WORK-2026-009",
+      "contractDate": "2026-08-30",
+      "paymentTermsDays": 30,
+      "currency": "RUB",
+      "description": "Equipment repair",
+      "active": true
+    }
+  ],
+  "obligations": [
+    {
+      "id": "obligation-paper",
+      "counterpartyId": "cp-volga",
+      "contractId": "contract-office",
+      "documentType": "invoice",
+      "documentNumber": "INV-0148",
+      "documentDate": "2026-09-03",
+      "amountMinor": 180000,
+      "recognizedOn": "2026-09-03",
+      "dueDate": "2026-09-20",
+      "active": true
+    },
+    {
+      "id": "obligation-repair",
+      "counterpartyId": "cp-northline",
+      "contractId": "contract-repair",
+      "documentType": "completedWorkAct",
+      "documentNumber": "ACT-0092",
+      "documentDate": "2026-09-15",
+      "amountMinor": 245000,
+      "recognizedOn": "2026-09-15",
+      "dueDate": "2026-10-20",
+      "active": true
+    }
+  ],
+  "payments": [
+    {
+      "id": "payment-paper-1",
+      "obligationId": "obligation-paper",
+      "paymentDate": "2026-09-12",
+      "amountMinor": 100000,
+      "currency": "RUB",
+      "method": "bankTransfer",
+      "reference": "PAY-0912-01",
+      "active": true
+    }
+  ]
+}
