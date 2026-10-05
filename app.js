@@ -161,10 +161,10 @@ function selectOptions(items, valueKey, label) {
 
 function summaryCards(data) {
   return `<div class="summary-grid">
-    <article class="summary-card accent"><p>Obligations</p><strong class="summary-value">${data.count}</strong><small>${money(data.obligationMinor)} registered</small></article>
-    <article class="summary-card"><p>Paid</p><strong class="summary-value">${money(data.paidMinor)}</strong><small>Recorded payments</small></article>
-    <article class="summary-card warn"><p>Remaining</p><strong class="summary-value">${money(data.remainingMinor)}</strong><small>Open balance</small></article>
-    <article class="summary-card alert"><p>Overdue</p><strong class="summary-value">${money(data.overdueMinor)}</strong><small>At ${formatDate(state.reportAsOf)}</small></article>
+    <article class="summary-card accent"><p>Obligations</p><strong class="metric-value">${data.count}</strong><small>${money(data.obligationMinor)} registered</small></article>
+    <article class="summary-card"><p>Paid</p><strong class="metric-value">${money(data.paidMinor)}</strong><small>Recorded payments</small></article>
+    <article class="summary-card warn"><p>Remaining</p><strong class="metric-value">${money(data.remainingMinor)}</strong><small>Open balance</small></article>
+    <article class="summary-card alert"><p>Overdue</p><strong class="metric-value">${money(data.overdueMinor)}</strong><small>${text("atDate", { date: formatDate(state.reportAsOf) })}</small></article>
   </div>`;
 }
 
@@ -301,7 +301,7 @@ function reportView() {
   return `${pageHeading("Settlement report", "Filter the compact register and inspect balances as of a selected date.")}
     <section class="report-hero"><div><h2>As-of settlement register</h2><p>Due today is not treated as overdue. All totals are calculated from synthetic records.</p></div><div class="field"><label for="report-as-of">As-of date</label><input id="report-as-of" data-report-as-of data-date-input type="text" inputmode="numeric" value="${escapeHtml(formatInputDate(state.reportAsOf))}" placeholder="${text("datePlaceholder")}"></div></section>
     ${summaryCards(data)}
-    <div class="compare-grid"><article class="compare-card"><span>Supplier remaining balance</span><strong>${money(supplier)}</strong></article><article class="compare-card"><span>Contractor remaining balance</span><strong>${money(contractor)}</strong></article></div>
+    <div class="compare-grid"><article class="compare-card"><span>Supplier remaining balance</span><strong class="metric-value">${money(supplier)}</strong></article><article class="compare-card"><span>Contractor remaining balance</span><strong class="metric-value">${money(contractor)}</strong></article></div>
     <section class="toolbar"><div class="field"><label for="report-type">Counterparty type</label><select id="report-type" data-filter="type"><option value="all" ${state.filters.type === "all" ? "selected" : ""}>All types</option><option value="supplier" ${state.filters.type === "supplier" ? "selected" : ""}>Supplier</option><option value="contractor" ${state.filters.type === "contractor" ? "selected" : ""}>Contractor</option></select></div><div class="field"><label for="report-status">Status</label><select id="report-status" data-filter="status"><option value="all" ${state.filters.status === "all" ? "selected" : ""}>All statuses</option><option value="registered" ${state.filters.status === "registered" ? "selected" : ""}>Registered</option><option value="partiallyPaid" ${state.filters.status === "partiallyPaid" ? "selected" : ""}>Partially paid</option><option value="paid" ${state.filters.status === "paid" ? "selected" : ""}>Paid</option><option value="overdue" ${state.filters.status === "overdue" ? "selected" : ""}>Overdue</option></select></div><div class="field"><label for="report-search">Search</label><input id="report-search" data-filter="search" value="${escapeHtml(state.filters.search)}" placeholder="Name or document"></div><button class="button button-ghost" data-action="clear-filters">Reset filters</button></section>
     <section class="panel"><div class="panel-header"><h2>Filtered register</h2><span class="helper">${rows.length} records</span></div><div class="table-wrap">${obligationTable(rows, state.reportAsOf)}</div></section>`;
 }

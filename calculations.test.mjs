@@ -10,6 +10,16 @@ test("calculates a partial payment and remaining balance", () => {
   assert.deepEqual(calculateMetrics(obligation, payments, "2026-10-03"), { paidMinor: 2500, remainingMinor: 7500, status: "partiallyPaid", overdueMinor: 0 });
 });
 
+test("gives overdue precedence over partially paid after the due date", () => {
+  const result = calculateMetrics({ ...obligation, dueDate: "2026-10-02" }, payments, "2026-10-03");
+  assert.deepEqual(result, { paidMinor: 2500, remainingMinor: 7500, status: "overdue", overdueMinor: 7500 });
+});
+
+test("includes active payments after the as-of date in the balance", () => {
+  const result = calculateMetrics(obligation, [{ ...payments[0], paymentDate: "2026-10-20" }], "2026-10-03");
+  assert.deepEqual(result, { paidMinor: 2500, remainingMinor: 7500, status: "partiallyPaid", overdueMinor: 0 });
+});
+
 test("calculates a fully paid obligation", () => {
   const result = calculateMetrics(obligation, [{ ...payments[0], amountMinor: 10000 }], "2026-10-03");
   assert.equal(result.remainingMinor, 0);

@@ -22,6 +22,7 @@ test("translates representative interface text and dynamic counts", () => {
   assert.equal(translate("en", "savePayment"), "Save payment");
   assert.equal(translateText("3 active records", "ru"), "Активные записи — 3 шт.");
   assert.equal(translateText("Payment register", "ru"), "Реестр платежей");
+  assert.equal(translate("ru", "atDate", { date: "03.10.2026" }), "На дату 03.10.2026");
   assert.equal(formatDateValue("2026-10-03", "ru"), "03.10.2026");
 });
 
